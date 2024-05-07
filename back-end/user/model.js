@@ -5,10 +5,10 @@ const Schema = mongoose.Schema;
 const UserSchema = new Schema({
     first_name: {type: String, required: true, maxLength:100},
     last_name: {type:String, require: true, maxLength:100},
-    date_of_bith:{type:Date},
+    date_of_birth:{type:Date},
     address: { city:String, quarter:String, Country:String},
-    email: String,
-    phone_number: String,
+    email: {type:String, required:true, unique:true},
+    phone_number: {type:String, required:true, unique:true},
     password: String,
     role:{name:{type: String, require:true, enum:["USER", "ADMIN"], default:"USER"}},
     profile: String
