@@ -45,10 +45,17 @@ exports.user_create = [
             .isLength({min:7})
             .withMessage("password should be more than 7 chacters"),
 
+    body("pin")
+            .trim()
+            .isLength(6)
+            .withMessage("pin length should be six digits"),
+
     asyncHandler(async (req, res,next)=>{
        const errors = validationResult(req);
 
        const hashedpassword = await bcrypt.hash(req.body.password,11);
+       const hashedpin = await bcrypt.hash(req.body.pin, 6)
+       const walletName = await nameWallet();
        const user = new User({
         first_name: req.body.first_name,
         last_name: req.body.last_name,
@@ -59,16 +66,25 @@ exports.user_create = [
             country:req.body.country,
             },
         email:req.body.email,
+        wallet:{
+                name: walletName
+        },
         phone_number:req.body.phone_number,
-        password:hashedpassword
+        password:hashedpassword,
+        pin:hashedpin
        });
+ 
+       async function nameWallet(){
+        let rand = parseInt(Math.random()*100000);
+        return req.body.first_name + '#wallet#' + rand;
+       }
 
        if(!errors.isEmpty()){
         res.status(400).json({errors:errors.array()});
         return;
        }else{
         await user.save();
-        res.status(201).json(user);
+        res.status(201).json({message:"user created successfully!"});
        }
 
     })
@@ -86,7 +102,11 @@ exports.user_login = asyncHandler(async (req, res, next)=>{
     if(!passwordMatch){
         res.status(401).json({error: 'authentication failed'})
     }
-    const token = jwt.sign({userId: user._id}, 'your-secret-key',{expiresIn: 60*10});
+    const token = jwt.sign({userId: user._id, 
+        role: user.role, 
+        profile: user.profile,
+         userName:user.first_name,
+         wallet:user.wallet}, 'your-secret-key',{expiresIn: 60*10});
     res.status(200).json({token});
 });
 
