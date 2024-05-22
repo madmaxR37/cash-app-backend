@@ -1,4 +1,3 @@
-const { json } = require("express");
 const User = require("./model");
 const asyncHandler = require("express-async-handler");
 const {body, validationResult} = require("express-validator");
@@ -54,7 +53,7 @@ exports.user_create = [
        const errors = validationResult(req);
 
        const hashedpassword = await bcrypt.hash(req.body.password,11);
-       const hashedpin = await bcrypt.hash(req.body.pin, 6)
+       const hashedpin = await bcrypt.hash(req.body.pin, 6);
        const walletName = await nameWallet();
        const user = new User({
         first_name: req.body.first_name,

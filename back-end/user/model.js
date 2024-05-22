@@ -11,7 +11,7 @@ const UserSchema = new Schema({
     phone_number: {type:String, required:true, unique:true},
     password: String,
     pin:{type: String, required:true},
-    wallet:{name:String, account_balance:{type:Number, default:0.0},
+    wallet:{name:String, account_balance:{type:mongoose.SchemaTypes.Decimal128, default:0.0},
         currency:{type:String, enum:["XAF"],default:"XAF"}},
     role:{name:{type: String, require:true, enum:["USER", "ADMIN"], default:"USER"}},
     profile: String,
