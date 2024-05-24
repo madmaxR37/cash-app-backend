@@ -16,7 +16,8 @@ const UserSchema = new Schema({
     role:{name:{type: String, require:true, enum:["USER", "ADMIN"], default:"USER"}},
     profile: String,
     created: {type:Date, default:Date.now},
-    contacts:[{type:mongoose.SchemaTypes.ObjectId, ref:'Contact'}]
+    contacts:[{type:mongoose.SchemaTypes.ObjectId, ref:'Contact'}],
+    creditCards:[{type:mongoose.SchemaTypes.ObjectId, ref:'CreditCard'}]
 });
 
 module.exports = mongoose.model("User", UserSchema);
