@@ -1,22 +1,23 @@
 const User = require("../user/model");
 const Transaction = require('./model');
 const asyncHandler = require("express-async-handler");
-const {body, validationResult} = require("express-validator");
+const {body, validationResult} = require('express-validator');
 const bcrypt = require("bcryptjs");
-const { response } = require("express");
+const Notification = require('../notification/model');
 
 exports.create_transaction = [
-    body("receiver")
+         body('receiver')
             .trim()
-            .isLength({min:1})
-            .withMessage("You must specify the receiver"),
-    body("amount")
+            .isLength({min:9})
+            .withMessage("identifier must be valid"),
+        body('amount')
             .isFloat({min:100})
-            .withMessage("amount should be greater than 100"),
-
+            .withMessage('amount should be more than 100'),
         asyncHandler(async (req, res, next)=>{
-
             const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return res.status(400).json({errors:errors.array()});
+            } 
             const sender_id = req.params.id;
             const receiver_param = req.body.receiver;  
             const sender = await User.findById(sender_id);
@@ -49,9 +50,6 @@ exports.create_transaction = [
             receivers_id: receiver_id,
             amount : transaction_amount 
            });
-           if(!errors.isEmpty){
-                return res.status(400).json({"errors" :errors.array()});
-           }
 
            await transaction.save(); 
             res.status(201).json({
@@ -59,26 +57,19 @@ exports.create_transaction = [
              "amount": transaction_amount,
              "transaction_id":transaction._id
            });
-;
-        }) 
-        
-       
-]
+        })
+];
 
 exports.confirm_transaction = [
-    body("pin")
+    body('pin')
         .trim()
         .isLength(6)
-        .withMessage("pin length should be six digits"),
-    
-    
-    asyncHandler(async (req, res, next)=>{
-
-    const errors = validationResult(req);
-
-    if(!errors.isEmpty){
-        return res.status(400).json({"errors" :errors.array()});
-   }
+        .withMessage("Pin must be six digits"),
+        asyncHandler(async (req, res, next)=>{
+            const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return res.status(400).json({errors:errors.array()});
+            } 
 
     const pin = req.body.pin;
 
@@ -100,17 +91,31 @@ exports.confirm_transaction = [
     if(!pinMatch){
         return res.status(400).json({"message": "invalid pin"})
     }
-
+    
     sender.wallet.account_balance -= amount;
     receiver.wallet.account_balance += amount;
     transaction.status= true;
+    
+    const senderNotification = new Notification({
+        userId:transaction.senders_id,
+        title:'Transaction confirmation',
+        description:`You have sent ${amount}${sender.wallet.currency} to ${receiver.first_name}, on the ${transaction.created}.
+        TransactionID:${transaction._id}`,
+    });
+
+    const receiverNotification = new Notification({
+        userId:transaction.receivers_id,
+        title:'Transaction reception',
+        description:`You have sent ${amount}${sender.wallet.currency} to ${receiver.first_name}, on ${transaction.created}.
+        TransactionID:${transaction._id}`,
+    });
 
     await sender.save();
     await receiver.save();
     await transaction.save();
+    await senderNotification.save();
+    await receiverNotification.save();
 
     res.status(200).json({"message": "transaction successfull!"});
-
-})
-
-]
+    })
+];

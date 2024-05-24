@@ -15,7 +15,8 @@ const UserSchema = new Schema({
         currency:{type:String, enum:["XAF"],default:"XAF"}},
     role:{name:{type: String, require:true, enum:["USER", "ADMIN"], default:"USER"}},
     profile: String,
-    created: {type:Date, default:Date.now}
+    created: {type:Date, default:Date.now},
+    contacts:[{type:mongoose.SchemaTypes.ObjectId, ref:'Contact'}]
 });
 
 module.exports = mongoose.model("User", UserSchema);
