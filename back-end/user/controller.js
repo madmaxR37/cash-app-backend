@@ -95,11 +95,11 @@ exports.user_login = asyncHandler(async (req, res, next)=>{
     const user_password = req.body.password;
     const user = await User.findOne({email: user_email});
     if(!user){
-        res.status(401).json({error: 'authentication failed'})
+        res.status(401).json({error: 'authentication failed'});
     }
     const passwordMatch = await bcrypt.compare(user_password, user.password);
     if(!passwordMatch){
-        res.status(401).json({error: 'authentication failed'})
+        res.status(401).json({error: 'authentication failed'});
     }
     const token = jwt.sign({userId: user._id, 
         role: user.role, 
