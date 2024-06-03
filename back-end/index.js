@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const userRoutes= require('./user/routes');
 const  transactionRoutes= require('./transaction/routes');
 const notificationRoutes = require('./notification/routes');
@@ -17,11 +18,12 @@ const app = express();
 app.use(express.json());
 db_connection;
 app.use(cors());
+app.use(cookieParser());
 app.use('/api-docs', swaggerUi.serve,swaggerUi.setup(specs));
 app.use('/api', userRoutes, transactionRoutes, notificationRoutes, litigationRoutes, contactRoutes,creditCardRoutes);
 app.use(function(err, req, res, next) {
     res.status(err.status || 500);
-    res.json({err});
+    res.json({err:'un expected error'});
   });
 
 module.exports = app;

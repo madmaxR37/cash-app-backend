@@ -52,7 +52,7 @@ exports.add_creditcard = [
             return res.status(400).json({errors:errors.array()});
         }
 
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(req.userId);
 
         if(!user){
                 return res.status(404).json({message:"User not found"});
@@ -98,6 +98,6 @@ exports.add_creditcard = [
 ];
 
 exports.get_creditcards = asyncHandler (async (req, res, next)=>{
-        const user = await User.findById(req.params.id).populate('creditCards');
+        const user = await User.findById(req.userId).populate('creditCards');
         res.status(200).json(user.creditCards);
 });

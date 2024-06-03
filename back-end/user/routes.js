@@ -82,6 +82,29 @@
  *      items:
  *       type: string
  */
+/**
+ * @swagger
+ * components:
+ *  schemas:
+ *   login: 
+ *    type: object
+ *    properties:
+ *     message:
+ *      type:string
+ */
+/**
+ * @swagger
+ * components:
+ *  schemas:
+ *   successfulLogin:
+ *    type: object
+ *   properties:
+ *    credentials:
+ *     type:string
+ *    password:
+ *     type:string
+ */
+
 
 const express = require("express");
 
@@ -135,12 +158,49 @@ const userController = require("./controller");
  *       description: Some error.
  */
 
+/**
+ * @swagger
+ * tags:
+ *   name: User
+ *   description: The user managing API
+ * /api/user/login:
+ *    post:
+ *      summary: login
+ *      tags: [User]
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/login'
+ *            example:
+ *               credentials: test@xmail.com
+ *               password: admin283$
+ *      responses:
+ *        '200':
+ *         description: The successful login token.
+ *         content: 
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/successfulLogin'
+ *             example:
+ *                message: successful login
+ *        '401':
+ *         description: wrong credentials error
+ *         content: 
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/errorsMessages' 
+ */
 router.post("/user/create", userController.user_create);
 
 router.post("/user/login", userController.user_login);
 
-router.delete("user/delete/:id", verifyToken, userController.user_delete);
+router.post("/refresh", userController.refresh_token);
 
-router.put("/user/update/:id", verifyToken, userController.user_update);
+router.delete("/user/delete", verifyToken, userController.user_delete);
+
+
+router.put("/user/update", verifyToken, userController.user_update);
 
 module.exports = router;

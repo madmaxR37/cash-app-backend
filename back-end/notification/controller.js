@@ -3,7 +3,7 @@ const Notification = require('./model');
 
 exports.getUserNotifications = asyncHandler(async (req, res, next)=>{
     
-    const userId = req.params.id;
+    const userId = req.userId;
 
     const notification = await Notification.find({userId: userId}).sort({date:'desc'}).limit(15);
 

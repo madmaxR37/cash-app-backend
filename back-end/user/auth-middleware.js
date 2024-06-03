@@ -1,15 +1,29 @@
 const jwt = require("jsonwebtoken");
 
 function verifyToken(req, res, next){
-    const token = req.header('Authorization');
-    if(!token) return res.status(401).json({error : "Access denied"});
+
+    const access_token = req.header('Authorization');
+    const refresh_token = req.cookies.refreshToken;
+    if(!access_token && !refresh_token) return res.status(401).json({error:"access denied no token provided"});
     try{
-        const decode= jwt.verify(token, 'your-secret-key');
-        req.userId = decode.userId;
+        user = jwt.verify(access_token, 'your-secret-key');
+        req.userId = user.userId;
+
         next();
     }catch(error){
-        res.status(401).json({error:'Invalid token'});
+        if(!refresh_token) return res.status(401).json({error:"refresh token not provided"});
+
+try{
+        const decoded = jwt.verify(refresh_token,'your-secret-key');
+        const access_token = jwt.sign({userId:decoded.userId,role:decoded.role},'your-secret-key', {expiresIn: 60*15});
+        res
+                .cookie('resfreshToken', refresh_token,{httpOnly:true, sameSite:'strict'})
+                .header('Authorization', access_token)
+                .json({message:'token refreshed'});
+}catch(error){
+        return res.status(401).json({message:'invalid token'});
+}
     }
-};
+}
 
 module.exports = verifyToken;

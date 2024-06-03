@@ -29,5 +29,18 @@ const options = {
     "notification/routes.js",
     "transaction/routes.js",
   ],
+  securities:{
+    bearer:{
+      type:'http',
+      in:'header',
+      scheme: 'bearer',
+      bearerFormat: 'JWT'
+    }
+
+  },
+   
+  initOAuth:{
+    scopes:{}
+  }
 };
 module.exports = options;

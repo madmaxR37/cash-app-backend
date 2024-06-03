@@ -91,28 +91,54 @@ exports.user_create = [
 
 exports.user_login = asyncHandler(async (req, res, next)=>{
 
-    const user_email = req.body.email;
+    const user_email = req.body.credentials;
     const user_password = req.body.password;
     const user = await User.findOne({email: user_email});
     if(!user){
-        res.status(401).json({error: 'authentication failed'});
+      return  res.status(401).json({error: 'authentication failed incorrect email/password'});
     }
     const passwordMatch = await bcrypt.compare(user_password, user.password);
     if(!passwordMatch){
-        res.status(401).json({error: 'authentication failed'});
+      return  res.status(401).json({error: 'authentication failed incorrect email/password'});
     }
-    const token = jwt.sign({userId: user._id, 
-        role: user.role, 
-        profile: user.profile,
-         userName:user.first_name,
-         wallet:user.wallet}, 'your-secret-key',{expiresIn: 60*10});
-    res.status(200).json({token});
+
+    const userAuth = {userId: user._id, 
+        role: user.role};
+
+    const access_token = jwt.sign(userAuth, 'your-secret-key',{expiresIn: 30*60});
+
+    const refresh_token = jwt.sign(userAuth, 'your-secret-key',{expiresIn: '1d'});
+
+    res
+    .cookie('refreshToken', refresh_token, {httpOnly:true, sameSite:'strict'})
+    .header('Autorization', access_token).status(200).json({message:'login successful'});
 });
 
+
+
 exports.user_update = asyncHandler(async (req, res, next)=>{
-       res.send(`Not Implemented : User :${req.params.id}`);
+       res.send(`Not Implemented : User :${req.userId}`);
 });
+
+
 
 exports.user_delete = asyncHandler(async (req, res, next)=>{
     res.send("Not yet implemented: Delete User");
 });
+
+
+
+exports.refresh_token = asyncHandler(async (req, res)=>{
+        const refresh_token = req.cookies.refreshToken;
+        if(!refresh_token) return res.status(401).json({error:"refresh token not provided"});
+
+try{
+        const decoded = jwt.verify(refresh_token,'your-secret-key');
+        const access_token = jwt.sign({userId:decoded.userId,role:decoded.role},'your-secret-key', {expiresIn: 60*15});
+        res
+                .header('Authorization', access_token)
+                .json({message:'token refreshed'});
+}catch(error){
+        return res.status(401).json({message:'invalid refresh token'});
+}
+})

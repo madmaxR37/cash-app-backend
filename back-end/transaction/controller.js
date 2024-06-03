@@ -18,7 +18,7 @@ exports.create_transaction = [
             if(!errors.isEmpty()){
                 return res.status(400).json({errors:errors.array()});
             } 
-            const sender_id = req.params.id;
+            const sender_id = req.userId;
             const receiver_param = req.body.receiver;  
             const sender = await User.findById(sender_id);
             if(!sender){

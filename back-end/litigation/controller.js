@@ -28,7 +28,7 @@ exports.createLitigation = [
 
         const litigation = new Litigation({
 
-            userId: req.params.id,
+            userId: req.userId,
 
             title: req.body.title,
 

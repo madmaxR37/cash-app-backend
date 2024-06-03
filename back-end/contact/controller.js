@@ -3,7 +3,7 @@ const Contact = require('./model');
 const User = require("../user/model");
 
 exports.add_contact = asyncHandler(async (req, res, next)=>{
-    const userId = req.params.id;
+    const userId = req.userId;
     const contactId = req.params.contactId;
 
     const user = await User.findById(userId);
@@ -29,6 +29,6 @@ exports.add_contact = asyncHandler(async (req, res, next)=>{
 
 exports.get_contacts = asyncHandler(async (req, res, next)=>{
 
-    const user = await User.findById(req.params.id).populate('contacts');
+    const user = await User.findById(req.userId).populate('contacts');
     res.status(200).json(user.contacts);
 });
