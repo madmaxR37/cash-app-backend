@@ -2,9 +2,11 @@ const jwt = require("jsonwebtoken");
 
 function verifyToken(req, res, next){
 
-    const access_token = req.header('Authorization');
+    const authHeader = req.header('Authorization');
     const refresh_token = req.cookies.refreshToken;
-    if(!access_token && !refresh_token) return res.status(401).json({error:"access denied no token provided"});
+
+    const access_token = authHeader.substring(7, authHeader.length);
+    if(!authHeader && !refresh_token) return res.status(401).json({error:"access denied no token provided"});
     try{
         user = jwt.verify(access_token, 'your-secret-key');
         req.userId = user.userId;

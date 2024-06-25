@@ -5,7 +5,6 @@ const Litigation = require('./model');
 
 exports.createLitigation = [
     body("title")
-        .trim()
         .isLength({min:1, max:30})
         .withMessage("title should be between 1-30 words"),
     body("description")
@@ -18,7 +17,7 @@ exports.createLitigation = [
         if(!errors.isEmpty()){
             return res.status(400).json({errors: errors.array()});
         }
-        const userId = req.params.id;
+        const userId = req.userId;
          
         const user = await User.findById(userId);
 

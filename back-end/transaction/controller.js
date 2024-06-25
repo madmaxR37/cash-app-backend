@@ -4,6 +4,8 @@ const asyncHandler = require("express-async-handler");
 const {body, validationResult} = require('express-validator');
 const bcrypt = require("bcryptjs");
 const Notification = require('../notification/model');
+const Flutterwave = require('flutterwave-node-v3');
+                    require('dotenv').config();
 
 exports.create_transaction = [
          body('receiver')
@@ -119,3 +121,99 @@ exports.confirm_transaction = [
     res.status(200).json({"message": "transaction successfull!"});
     })
 ];
+
+exports.mobile_charge = [
+
+    body('phone')
+        .trim(),
+    body('amount'),
+    asyncHandler(async (req, res)=>{
+
+        const errors = validationResult(req);
+            if(!errors.isEmpty()){
+                return res.status(400).json({errors:errors.array()});
+            } 
+
+        const flw_secrete_key = process.env.FLW_SECRET_KEY;
+
+        const flw_public_key = process.env.FLW_PUBLIC_KEY;
+
+        const flw = new Flutterwave(flw_public_key, flw_secrete_key);
+
+        const payload = {
+            phone_number: req.phone,
+
+            amount: req.amount,
+
+            currency: 'XAF',
+
+            email:'',
+
+            tx_ref: this.generateTransactionReference()
+        }
+
+        flw.MobileMoney.franco_phone(payload);
+    })
+
+];
+
+exports.web_hook = asyncHandler(async(req, res)=>{
+        const payload =req.body;
+        console.log(payload);
+        res.status(200).end
+
+});
+
+exports.get_all_user_transactions = asyncHandler(async(req,res, next)=>{
+      const userId = req.userId;
+      const transactions = await Transaction.find({
+        $or: [
+          { senders_id: userId },
+          { receivers_id: userId }
+        ]
+      }).sort({created:'desc'});
+
+      if(!transactions){
+        return res.status(404).json({message:"no transaction yet"});
+      }
+
+      res.status(200).json({transactions});
+});
+
+exports.get_all_transactions_filter = asyncHandler(async(req, res)=>{
+
+    const userId = req.userId
+    const endDate =  new Date();
+    let startDate;
+    const timeframe = req.body.timeframe;
+
+    switch (timeframe) {
+        case 'daily':
+          startDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+          break;
+        case 'weekly':
+          startDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() - endDate.getDay());
+          break;
+        case 'monthly':
+          startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+          break;
+        default:
+          res.status(400).json({message:"invalid time frame"});
+      }
+
+      const transactions = await Transaction.find({
+
+        senders_id: userId,
+        created: { $gte: startDate, $lte: endDate }
+      });
+
+      let totalTransaction =0;
+
+      transactions.forEach(transaction => {
+        const transactionAmount = parseFloat(transaction.amount);
+        totalTransaction += transactionAmount;
+      });
+    
+      res.status(200).json({totalTransaction,transactions});
+
+})

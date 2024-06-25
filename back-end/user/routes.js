@@ -192,6 +192,28 @@ const userController = require("./controller");
  *             schema:
  *               $ref: '#/components/schemas/errorsMessages' 
  */
+
+/**
+ * @swagger
+ * tags:
+ *   name: User
+ *   description: The user managing API
+ * /api/user/:
+ *    get:
+ *      security:
+ *        - BearerAuth: []
+ *      summary: getting user info
+ *      tags: [User]
+ *      responses:
+ *        '200':
+ *         description: User's information
+ *         content: 
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *    
+ */
+
 router.post("/user/create", userController.user_create);
 
 router.post("/user/login", userController.user_login);
@@ -199,6 +221,8 @@ router.post("/user/login", userController.user_login);
 router.post("/refresh", userController.refresh_token);
 
 router.delete("/user/delete", verifyToken, userController.user_delete);
+
+router.get("/user", verifyToken, userController.get_user_by_id);
 
 
 router.put("/user/update", verifyToken, userController.user_update);
