@@ -117,6 +117,67 @@ router.post('/transaction/create', verifyToken, transactionController.create_tra
  *        
  */
 
+/**
+ * @swagger
+ *  tags:
+ *   name: Transaction
+ *   description: The Transaction managing API
+ * /api/transactions:
+ *   get:
+ *     security:
+ *        - BearerAuth: []
+ *     summary: get all transactions
+ *     tags: [Transaction]
+ *     requestBody:
+ *       required: false
+ *       
+ *     responses: 
+ *       '200':
+ *         content: 
+ *            application/json:
+ *              schema: 
+ *                type: object
+ *                properties:
+ *                  transactions:
+ *                      type: array
+ *                      items:
+ *                         $ref: '#/components/schemas/Transaction'
+ *                        
+ *       '400':
+ *         
+ *       '401':
+ *       
+ *       '404':
+ *       
+ *       '500':
+ *
+ */
+
+/**
+ * @swagger
+ *  tags:
+ *   name: Transaction
+ *   description: The Transaction managing API
+ * /api/transactions/filter:
+ *   get:
+ *     security:
+ *        - BearerAuth: []
+ *     summary: get all transactions
+ *     tags: [Transaction]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *          application/json:
+ *            schema:
+ *              type: string
+ *     responses: 
+ *       '200':
+ *         content: 
+ *            application/json:
+ *                $ref: '#/components/schemas/Transaction'
+ *                 
+ *       
+ */
 router.put('/transaction/confirm/:id', verifyToken, transactionController.confirm_transaction);
 
 router.post('/flw-webhook', transactionController.web_hook);

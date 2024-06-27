@@ -149,12 +149,17 @@ exports.mobile_charge = [
 
             email:'',
 
-            tx_ref: this.generateTransactionReference()
+            tx_ref: this.generateTransactionReference(),
+
+            country: "CM"
         }
 
-        flw.MobileMoney.franco_phone(payload);
-    })
+        flw.MobileMoney.franco_phone(payload)
+        .then(validateTransaction);
 
+        
+    }),
+    function validateTransaction(){}
 ];
 
 exports.web_hook = asyncHandler(async(req, res)=>{
@@ -216,4 +221,5 @@ exports.get_all_transactions_filter = asyncHandler(async(req, res)=>{
     
       res.status(200).json({totalTransaction,transactions});
 
-})
+});
+

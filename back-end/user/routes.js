@@ -220,6 +220,8 @@ router.post("/user/login", userController.user_login);
 
 router.post("/refresh", userController.refresh_token);
 
+router.put("/user/update/password", userController.user_update_password);
+
 router.delete("/user/delete", verifyToken, userController.user_delete);
 
 router.get("/user", verifyToken, userController.get_user_by_id);
