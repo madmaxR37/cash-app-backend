@@ -184,6 +184,8 @@ router.post('/flw-webhook', transactionController.web_hook);
 
 router.get('/transactions', verifyToken, transactionController.get_all_user_transactions);
 
-router.get('/transactions/filter', verifyToken, transactionController.get_all_transactions_filter)
+router.get('/transactions/filter', verifyToken, transactionController.get_all_transactions_filter);
+
+router.post('/transaction/mobile-charge', verifyToken, transactionController.mobile_charge);
 
 module.exports = router;

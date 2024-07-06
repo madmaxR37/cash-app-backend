@@ -108,7 +108,7 @@ exports.confirm_transaction = [
     const receiverNotification = new Notification({
         userId:transaction.receivers_id,
         title:'Transaction reception',
-        description:`You have sent ${amount}${sender.wallet.currency} to ${receiver.first_name}, on ${transaction.created}.
+        description:`You have received ${amount}${sender.wallet.currency} to ${receiver.first_name}, on ${transaction.created}.
         TransactionID:${transaction._id}`,
     });
 
@@ -123,44 +123,60 @@ exports.confirm_transaction = [
 ];
 
 exports.mobile_charge = [
-
     body('phone')
-        .trim(),
+      .trim(),
     body('amount'),
-    asyncHandler(async (req, res)=>{
+    asyncHandler(async (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+  
+      const flw_secret_key = process.env.FLW_SECRET_KEY;
+      const flw_public_key = process.env.FLW_PUBLIC_KEY;
+  
+      const flw = new Flutterwave(flw_public_key, flw_secret_key);
+   
+      const userId = req.userId;
+      const user = await User.findById(userId);
 
-        const errors = validationResult(req);
-            if(!errors.isEmpty()){
-                return res.status(400).json({errors:errors.array()});
-            } 
+      const payload = {
+        phone_number: req.body.phone,
+        amount: req.body.amount,
+        currency: 'XAF',
+        email: user.email,
+        tx_ref: 'ref_tmkoo_'+user._id,
+        country: 'CM',
+      };
+      try {
+        const response = await flw.MobileMoney.franco_phone(payload);
+        const transaction = new Transaction({
+            receivers_id: userId,
+            amount : response.data.amount,
+            status: true
+        });
 
-        const flw_secrete_key = process.env.FLW_SECRET_KEY;
+        user.wallet.account_balance += response.data.amount;
 
-        const flw_public_key = process.env.FLW_PUBLIC_KEY;
+        const receiverNotification = new Notification({
+            userId:transaction.receivers_id,
+            title:'Transaction reception',
+            description:`You have received ${response.data.amount}${user.wallet.currency}, on the ${response.data.created_at}.
+            Transaction_ref:${response.data.flw_ref}`,
+        });
 
-        const flw = new Flutterwave(flw_public_key, flw_secrete_key);
+        await user.save();
+        await transaction.save();
+        await receiverNotification.save();
 
-        const payload = {
-            phone_number: req.phone,
-
-            amount: req.amount,
-
-            currency: 'XAF',
-
-            email:'',
-
-            tx_ref: this.generateTransactionReference(),
-
-            country: "CM"
-        }
-
-        flw.MobileMoney.franco_phone(payload)
-        .then(validateTransaction);
-
-        
+        res.status(200).json({message:"transaction successful"});
+      } catch (error) {
+        console.error('Error making direct charge request:', error);
+        res.status(500).json({ error: 'Error making direct charge request' });
+      }
     }),
-    function validateTransaction(){}
-];
+
+  ];
 
 exports.web_hook = asyncHandler(async(req, res)=>{
         const payload =req.body;
@@ -171,18 +187,34 @@ exports.web_hook = asyncHandler(async(req, res)=>{
 
 exports.get_all_user_transactions = asyncHandler(async(req,res, next)=>{
       const userId = req.userId;
-      const transactions = await Transaction.find({
-        $or: [
-          { senders_id: userId },
-          { receivers_id: userId }
-        ]
-      }).sort({created:'desc'});
+      const sent_transactions = await Transaction.find({
+        senders_id: userId
+      });
 
-      if(!transactions){
-        return res.status(404).json({message:"no transaction yet"});
-      }
+      let total_sent_Transaction =0;
 
-      res.status(200).json({transactions});
+      sent_transactions.forEach(transaction => {
+        const transactionAmount = parseFloat(transaction.amount);
+        total_sent_Transaction += transactionAmount;
+      });
+
+
+      const received_transactions = await Transaction.find({
+
+        receivers_id: userId
+      });
+
+      let total_received_Transaction =0;
+
+      received_transactions.forEach(transaction => {
+        const transactionAmount = parseFloat(transaction.amount);
+        total_received_Transaction += transactionAmount;
+      });
+
+      const sent_percentage = (total_sent_Transaction/(total_sent_Transaction+total_received_Transaction))*100;
+      const received_percentage = (total_received_Transaction/(total_sent_Transaction+total_received_Transaction))*100;
+    
+      res.status(200).json({total_received_Transaction,total_sent_Transaction,received_transactions,sent_transactions,sent_percentage,received_percentage});
 });
 
 exports.get_all_transactions_filter = asyncHandler(async(req, res)=>{
@@ -206,20 +238,37 @@ exports.get_all_transactions_filter = asyncHandler(async(req, res)=>{
           res.status(400).json({message:"invalid time frame"});
       }
 
-      const transactions = await Transaction.find({
+      const sent_transactions = await Transaction.find({
 
         senders_id: userId,
         created: { $gte: startDate, $lte: endDate }
       });
 
-      let totalTransaction =0;
+      let total_sent_Transaction =0;
 
-      transactions.forEach(transaction => {
+      sent_transactions.forEach(transaction => {
         const transactionAmount = parseFloat(transaction.amount);
-        totalTransaction += transactionAmount;
+        total_sent_Transaction += transactionAmount;
       });
-    
-      res.status(200).json({totalTransaction,transactions});
+
+
+      const received_transactions = await Transaction.find({
+
+        receivers_id: userId,
+        created: { $gte: startDate, $lte: endDate }
+      });
+
+      let total_received_Transaction =0;
+
+      received_transactions.forEach(transaction => {
+        const transactionAmount = parseFloat(transaction.amount);
+        total_received_Transaction += transactionAmount;
+      });
+
+      const sent_percentage = (total_sent_Transaction/(total_sent_Transaction+total_received_Transaction))*100;
+      const received_percentage = (total_received_Transaction/(total_sent_Transaction+total_received_Transaction))*100;
+
+      res.status(200).json({total_received_Transaction,total_sent_Transaction,received_transactions,sent_transactions,sent_percentage,received_percentage});
 
 });
 

@@ -171,8 +171,23 @@ exports.get_user_by_id = asyncHandler(async (req, res)=>{
                 return res.status(404).json({message:'user not found'});
         }
 
-
-
         res.status(200).json({user});
 
-})
+});
+
+exports.change_password = asyncHandler(async(req, res)=>{
+        
+});
+
+
+exports.get_user_by_email = asyncHandler(async(req, res)=>{
+
+        const email = req.body.email;
+        const user = await User.find({email:email});
+
+        if(!user){
+                return  res.status(404).json({error: 'user with that email does not exist'});
+                   }
+
+                   res.status(200).json(user);
+});

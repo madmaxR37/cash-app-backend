@@ -226,6 +226,8 @@ router.delete("/user/delete", verifyToken, userController.user_delete);
 
 router.get("/user", verifyToken, userController.get_user_by_id);
 
+router.get("/user/find", verifyToken, userController.get_user_by_email);
+
 
 router.put("/user/update", verifyToken, userController.user_update);
 

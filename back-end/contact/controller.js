@@ -32,3 +32,8 @@ exports.get_contacts = asyncHandler(async (req, res, next)=>{
     const user = await User.findById(req.userId).populate('contacts');
     res.status(200).json(user.contacts);
 });
+
+exports.find_users = asyncHandler(async (req, res)=>{
+
+    const users = await User.find()
+});
