@@ -7,6 +7,7 @@ const notificationRoutes = require('./notification/routes');
 const litigationRoutes = require('./litigation/routes')
 const contactRoutes = require('./contact/routes');
 const creditCardRoutes = require('./credit-card/routes');
+const QRRoutes = require('./qr-code/routes');
 const db_connection = require('./utils/db_connection');
 const swaggerJsdoc= require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
@@ -19,8 +20,9 @@ app.use(express.json());
 db_connection;
 app.use(cors());
 app.use(cookieParser());
+app.use('/qr-code-images', express.static('./qr-code-images'));
 app.use('/api-docs', swaggerUi.serve,swaggerUi.setup(specs));
-app.use('/api', userRoutes, transactionRoutes, notificationRoutes, litigationRoutes, contactRoutes,creditCardRoutes);
+app.use('/api', userRoutes, transactionRoutes, notificationRoutes, litigationRoutes, contactRoutes,creditCardRoutes,QRRoutes);
 app.use(function(err, req, res, next) {
     res.status(err.status || 500);
     res.json({err:'un expected error'});

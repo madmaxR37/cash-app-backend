@@ -87,6 +87,8 @@ const transactionController = require('./controller');
 
 router.post('/transaction/create', verifyToken, transactionController.create_transaction);
 
+router.post('/transaction/create/:id', verifyToken, transactionController.create_transaction_with_id);
+
 /**
  * @swagger
  *  tags: 

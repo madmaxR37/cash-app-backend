@@ -62,6 +62,43 @@ exports.create_transaction = [
         })
 ];
 
+exports.create_transaction_with_id = asyncHandler(async(req, res)=>{
+
+  const sender_id = req.userId;
+  const receiver_id = req.params.id;
+  const transaction_amount = req.body.amount;
+
+  const sender = await User.findById(sender_id);
+  
+  if(!sender){
+      return res.status(404).json({"message": "sender not found"});
+  }
+  
+  const senderWalletBalance = sender.wallet.account_balance;
+
+  if(senderWalletBalance < transaction_amount){
+           return res.status(400).json({"message":"Transaction failed, balance insufficient"});
+  }
+
+  const receiver = await User.findById(receiver_id);
+  if(!receiver){
+      return res.status(404).json({"message": "sender not found"});
+  }
+
+  const transaction = new Transaction({
+    senders_id : sender_id,
+    receivers_id: receiver_id,
+    amount : transaction_amount 
+   });
+
+   await transaction.save(); 
+    res.status(201).json({
+     "receiver" : receiver.first_name + ' ' + receiver.last_name,
+     "amount": transaction_amount,
+     "transaction_id":transaction._id
+   });
+})
+
 exports.confirm_transaction = [
     body('pin')
         .trim()
@@ -271,4 +308,3 @@ exports.get_all_transactions_filter = asyncHandler(async(req, res)=>{
       res.status(200).json({total_received_Transaction,total_sent_Transaction,received_transactions,sent_transactions,sent_percentage,received_percentage});
 
 });
-
