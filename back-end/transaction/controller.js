@@ -131,8 +131,8 @@ exports.confirm_transaction = [
         return res.status(400).json({"message": "invalid pin"})
     }
     
-    sender.wallet.account_balance -= amount;
-    receiver.wallet.account_balance += amount;
+    sender.wallet.account_balance -=parseFloat(amount);
+    receiver.wallet.account_balance += parseFloat(amount);
     transaction.status= true;
     
     const senderNotification = new Notification({
@@ -193,7 +193,7 @@ exports.mobile_charge = [
             status: true
         });
 
-        user.wallet.account_balance += response.data.amount;
+        user.wallet.account_balance += parseFloat(response.data.amount);
 
         const receiverNotification = new Notification({
             userId:transaction.receivers_id,
@@ -214,6 +214,54 @@ exports.mobile_charge = [
     }),
 
   ];
+
+  exports.carte_charge = [
+    body('number')
+      .trim(),
+      body('cvv')
+      .trim(),
+      body('exp_date')
+      .trim(),
+    body('amount'),
+    asyncHandler(async (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+   
+      const userId = req.userId;
+      const user = await User.findById(userId);
+
+      
+      try {
+        const transaction = new Transaction({
+            receivers_id: userId,
+            amount : req.body.amount,
+            status: true
+        });
+
+        user.wallet.account_balance += parseFloat(response.data.amount);
+
+        const receiverNotification = new Notification({
+            userId:transaction.receivers_id,
+            title:'Transaction reception',
+            description:`You have received ${response.data.amount}${user.wallet.currency}, on the ${response.data.created_at}.
+            Transaction_ref:${response.data.flw_ref}`,
+        });
+
+        await user.save();
+        await transaction.save();
+        await receiverNotification.save();
+
+        res.status(200).json({message:"transaction successful"});
+      } catch (error) {
+        console.error('Error making direct charge request:', error);
+        res.status(500).json({ error: 'Error making direct charge request' });
+      }
+    }),
+
+  ];
+
 
 exports.web_hook = asyncHandler(async(req, res)=>{
         const payload =req.body;
