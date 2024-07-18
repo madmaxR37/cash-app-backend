@@ -182,12 +182,14 @@ router.post('/transaction/create/:id', verifyToken, transactionController.create
  */
 router.put('/transaction/confirm/:id', verifyToken, transactionController.confirm_transaction);
 
-router.post('/flw-webhook', transactionController.web_hook);
-
 router.get('/transactions', verifyToken, transactionController.get_all_user_transactions);
 
-router.get('/transactions/filter', verifyToken, transactionController.get_all_transactions_filter);
+router.get('/transactions/filter/:timeframe', verifyToken, transactionController.get_all_transactions_filter);
 
 router.post('/transaction/mobile-charge', verifyToken, transactionController.mobile_charge);
+
+router.post('/transaction/carte-charge', verifyToken, transactionController.carte_charge);
+
+router.post('/transaction/mobile-withdraw', verifyToken, transactionController.mobile_withdraw);
 
 module.exports = router;

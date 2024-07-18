@@ -1,4 +1,5 @@
 const User = require("../user/model");
+const { Decimal128 } = require('mongodb');
 const Transaction = require('./model');
 const asyncHandler = require("express-async-handler");
 const {body, validationResult} = require('express-validator');
@@ -168,49 +169,38 @@ exports.mobile_charge = [
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-  
-      const flw_secret_key = process.env.FLW_SECRET_KEY;
-      const flw_public_key = process.env.FLW_PUBLIC_KEY;
-  
-      const flw = new Flutterwave(flw_public_key, flw_secret_key);
-   
       const userId = req.userId;
       const user = await User.findById(userId);
+      const amount = req.body.amount;
 
-      const payload = {
-        phone_number: req.body.phone,
-        amount: req.body.amount,
-        currency: 'XAF',
-        email: user.email,
-        tx_ref: 'ref_tmkoo_'+user._id,
-        country: 'CM',
-      };
-      try {
-        const response = await flw.MobileMoney.franco_phone(payload);
-        const transaction = new Transaction({
-            receivers_id: userId,
-            amount : response.data.amount,
-            status: true
-        });
+      const transaction = new Transaction({
 
-        user.wallet.account_balance += parseFloat(response.data.amount);
+        receivers_id: userId,
 
-        const receiverNotification = new Notification({
-            userId:transaction.receivers_id,
-            title:'Transaction reception',
-            description:`You have received ${response.data.amount}${user.wallet.currency}, on the ${response.data.created_at}.
-            Transaction_ref:${response.data.flw_ref}`,
-        });
+        amount: amount,
 
-        await user.save();
-        await transaction.save();
-        await receiverNotification.save();
+        status: true
 
-        res.status(200).json({message:"transaction successful"});
-      } catch (error) {
-        console.error('Error making direct charge request:', error);
-        res.status(500).json({ error: 'Error making direct charge request' });
-      }
+
+      });
+      
+      await transaction.save();
+
+      const recharge = parseFloat(user.wallet.account_balance) + amount; 
+      console.log(recharge);
+
+      user.wallet.account_balance= recharge;
+
+      const receiverNotification = new Notification({
+        userId:userId,
+        title:'Transaction reception',
+        description:`You have received ${amount}${user.wallet.currency}`,
+    });
+
+     await user.save();
+    await receiverNotification.save();
+
+    res.status(200).json({message:"Recharge successful"});
     }),
 
   ];
@@ -231,44 +221,39 @@ exports.mobile_charge = [
    
       const userId = req.userId;
       const user = await User.findById(userId);
+      const amount = req.body.amount;
 
+      const transaction = new Transaction({
+
+        receivers_id: userId,
+
+        amount: amount,
+
+        status: true
+
+
+      });
       
-      try {
-        const transaction = new Transaction({
-            receivers_id: userId,
-            amount : req.body.amount,
-            status: true
-        });
+      await transaction.save();
 
-        user.wallet.account_balance += parseFloat(response.data.amount);
+      const recharge = parseFloat(user.wallet.account_balance) + amount; 
 
-        const receiverNotification = new Notification({
-            userId:transaction.receivers_id,
-            title:'Transaction reception',
-            description:`You have received ${response.data.amount}${user.wallet.currency}, on the ${response.data.created_at}.
-            Transaction_ref:${response.data.flw_ref}`,
-        });
+      user.wallet.account_balance= recharge;
 
-        await user.save();
-        await transaction.save();
-        await receiverNotification.save();
+      const receiverNotification = new Notification({
+        userId:userId,
+        title:'Transaction reception',
+        description:`You have received ${amount}${user.wallet.currency}`,
+    });
 
-        res.status(200).json({message:"transaction successful"});
-      } catch (error) {
-        console.error('Error making direct charge request:', error);
-        res.status(500).json({ error: 'Error making direct charge request' });
-      }
-    }),
+     await user.save();
+    await receiverNotification.save();
+
+    res.status(200).json({message:"Recharge successful"});
+  }),
 
   ];
 
-
-exports.web_hook = asyncHandler(async(req, res)=>{
-        const payload =req.body;
-        console.log(payload);
-        res.status(200).end
-
-});
 
 exports.get_all_user_transactions = asyncHandler(async(req,res, next)=>{
       const userId = req.userId;
@@ -307,7 +292,7 @@ exports.get_all_transactions_filter = asyncHandler(async(req, res)=>{
     const userId = req.userId
     const endDate =  new Date();
     let startDate;
-    const timeframe = req.body.timeframe;
+    const timeframe = req.params.timeframe;
 
     switch (timeframe) {
         case 'daily':
@@ -356,3 +341,48 @@ exports.get_all_transactions_filter = asyncHandler(async(req, res)=>{
       res.status(200).json({total_received_Transaction,total_sent_Transaction,received_transactions,sent_transactions,sent_percentage,received_percentage});
 
 });
+
+exports.mobile_withdraw = [
+  body('phone')
+    .trim(),
+  body('amount'),
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const userId = req.userId;
+    const user = await User.findById(userId);
+    const amount = req.body.amount;
+
+    const transaction = new Transaction({
+
+      senders_id: userId,
+
+      amount: amount,
+
+      status: true
+
+
+    });
+    
+    await transaction.save();
+
+    const withdraw = parseFloat(user.wallet.account_balance) - amount; 
+   
+
+    user.wallet.account_balance= withdraw;
+
+    const receiverNotification = new Notification({
+      userId:userId,
+      title:'Transaction sent',
+      description:`You have removed ${amount}${user.wallet.currency}`,
+  });
+
+   await user.save();
+  await receiverNotification.save();
+
+  res.status(200).json({message:"withdraw successful"});
+  }),
+
+];
